@@ -9,8 +9,8 @@ typedef struct {
 	uint32_t preferred_controller_timeout_ms;
 	int steering_deadzone;
 	int throttle_deadzone;
-	bool invert_left_motor;
-	bool invert_right_motor;
+	bool invert_drive_motor;
+	bool invert_steering_motor;
 	bool invert_steering;
 } AppConfig;
 

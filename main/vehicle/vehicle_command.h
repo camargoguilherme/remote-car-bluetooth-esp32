@@ -12,7 +12,8 @@ typedef struct
     bool toggle_left_indicator;
     bool toggle_right_indicator;
     bool toggle_hazard;
-    bool toggle_headlight;
+    bool headlight_up;
+    bool headlight_down;
 
     // Som
     bool horn_pressed;

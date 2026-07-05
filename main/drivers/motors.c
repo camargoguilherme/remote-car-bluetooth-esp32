@@ -7,20 +7,13 @@
 #include "esp_err.h"
 
 #include "config/config.h"
+#include "board/board.h"
 #include "drivers/motors.h"
 #include "vehicle/vehicle.h"
 #include "pwm.h"
 #include "util.h"
 
 #define TAG "motors"
-
-#define LEFT_MOTOR_PWM_GPIO 18
-#define LEFT_MOTOR_IN1_GPIO 19
-#define LEFT_MOTOR_IN2_GPIO 21
-
-#define RIGHT_MOTOR_PWM_GPIO 5
-#define RIGHT_MOTOR_IN1_GPIO 25
-#define RIGHT_MOTOR_IN2_GPIO 26
 
 typedef struct {
 	ledc_channel_t pwm_channel;
@@ -30,19 +23,19 @@ typedef struct {
 	bool invert;
 } MotorChannel;
 
-static MotorChannel s_left_motor = {
-	.pwm_channel = LEDC_CHANNEL_0,
-	.pwm_gpio = LEFT_MOTOR_PWM_GPIO,
-	.in1_gpio = LEFT_MOTOR_IN1_GPIO,
-	.in2_gpio = LEFT_MOTOR_IN2_GPIO,
+static MotorChannel s_drive_motor = {
+	.pwm_channel = BOARD_CHANNEL_DRIVE_MOTOR,
+	.pwm_gpio = BOARD_PIN_DRIVE_MOTOR_PWM,
+	.in1_gpio = BOARD_PIN_DRIVE_MOTOR_IN1,
+	.in2_gpio = BOARD_PIN_DRIVE_MOTOR_IN2,
 	.invert = false,
 };
 
-static MotorChannel s_right_motor = {
-	.pwm_channel = LEDC_CHANNEL_1,
-	.pwm_gpio = RIGHT_MOTOR_PWM_GPIO,
-	.in1_gpio = RIGHT_MOTOR_IN1_GPIO,
-	.in2_gpio = RIGHT_MOTOR_IN2_GPIO,
+static MotorChannel s_steering_motor = {
+	.pwm_channel = BOARD_CHANNEL_STEERING_MOTOR,
+	.pwm_gpio = BOARD_PIN_STEERING_MOTOR_PWM,
+	.in1_gpio = BOARD_PIN_STEERING_MOTOR_IN1,
+	.in2_gpio = BOARD_PIN_STEERING_MOTOR_IN2,
 	.invert = false,
 };
 
@@ -95,34 +88,31 @@ void motors_init(const AppConfig* config)
 	pwm_init();
 
 	if (config != NULL) {
-		s_left_motor.invert = config->invert_left_motor;
-		s_right_motor.invert = config->invert_right_motor;
+		s_drive_motor.invert = config->invert_drive_motor;
+		s_steering_motor.invert = config->invert_steering_motor;
 	}
 
-	motor_init(&s_left_motor);
-	motor_init(&s_right_motor);
+	motor_init(&s_drive_motor);
+	motor_init(&s_steering_motor);
 	motors_stop();
 }
 
 void motors_stop(void)
 {
-	motor_set_speed(&s_left_motor, 0);
-	motor_set_speed(&s_right_motor, 0);
+	motor_set_speed(&s_drive_motor, 0);
+	motor_set_speed(&s_steering_motor, 0);
 }
 
 void motors_apply(const VehicleState* state)
 {
-	int left;
-	int right;
-
 	if (state == NULL) {
 			motors_stop();
 			return;
 	}
 
-	left = util_clamp_percent(state->motion.throttle + state->motion.steering);
-	right = util_clamp_percent(state->motion.throttle - state->motion.steering);
+	int speed = util_clamp_percent(state->motion.throttle + state->motion.throttle);
+	int steering = util_clamp_percent(state->motion.steering);
 
-	motor_set_speed(&s_left_motor, left);
-	motor_set_speed(&s_right_motor, right);
+	motor_set_speed(&s_drive_motor, speed);
+	motor_set_speed(&s_steering_motor, steering);
 }

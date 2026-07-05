@@ -81,26 +81,28 @@ main/
 # Arquitetura
 
 ```
-Bluetooth (Bluepad32)
-            │
-            ▼
-     bluetooth/
-            │
-            ▼
-      gamepad_mapper
-            │
-            ▼
-     VehicleCommand
-            │
-            ▼
- vehicle_apply_command()
-            │
-            ▼
-      VehicleState
-            │
- ┌──────────┼──────────┐
- ▼          ▼          ▼
-Motors    Lights      Horn
+                     Bluepad32
+                         │
+                         ▼
+                  bluetooth/
+                         │
+                         ▼
+                  gamepad_logger
+                         │
+                         ▼
+                  gamepad_mapper
+                         │
+                         ▼
+                  VehicleCommand
+                         │
+                         ▼
+                vehicle_apply_command()
+                         │
+                         ▼
+                  VehicleState
+     ┌─────────────┬─────────────┬─────────────┐
+     ▼             ▼             ▼             ▼
+  Motors        Lights         Horn       (Futuro)
 ```
 
 O projeto utiliza uma arquitetura baseada em estados.
@@ -110,6 +112,88 @@ O projeto utiliza uma arquitetura baseada em estados.
 - Toda comunicação passa por `VehicleCommand` e `VehicleState`.
 
 ---
+
+## Organização
+
+O projeto foi dividido em quatro camadas principais.
+
+### Bluetooth
+
+Responsável apenas pela comunicação com o controle Bluetooth utilizando Bluepad32.
+
+Não possui conhecimento sobre motores, iluminação ou buzina.
+
+### Gamepad
+
+Converte os dados recebidos do controle em comandos de alto nível.
+
+Exemplo:
+
+- acelerar
+- esterçar
+- ligar seta
+- trocar intensidade do farol
+
+O resultado é um `VehicleCommand`.
+
+### Vehicle
+
+Responsável pela lógica do veículo.
+
+Recebe um `VehicleCommand` e produz um `VehicleState`.
+
+Exemplos:
+
+- qual farol está ligado
+- seta esquerda ativa
+- buzina ligada
+- velocidade
+- direção
+
+### Drivers
+
+Responsáveis apenas pelo hardware.
+
+Cada driver lê o `VehicleState` e controla seus respectivos GPIOs.
+
+- motors
+- lights
+- horn
+
+---
+
+## Mapeamento do Controle
+| Controle             | Função                       |
+| -------------------- | ---------------------------- |
+| Analógico esquerdo X | Direção                      |
+| R2                   | Acelerar                     |
+| L2                   | Freio / Ré                   |
+| A                    | Buzina                       |
+| B                    | Pisca-alerta                 |
+| DPad ←               | Alterna seta esquerda        |
+| DPad →               | Alterna seta direita         |
+| DPad ↑               | Aumenta intensidade do farol |
+| DPad ↓               | Diminui intensidade do farol |
+
+---
+
+## Mapeamento do GPIO
+| GPIO | Função               |
+| ---- | -------------------- |
+| 5    | PWM Motor de Tração  |
+| 18   | IN1 Motor de Tração  |
+| 19   | IN2 Motor de Tração  |
+| 21   | PWM Motor de Direção |
+| 22   | IN1 Motor de Direção |
+| 23   | IN2 Motor de Direção |
+| 25   | Farol PWM            |
+| 14   | Lanterna             |
+| 13   | Luz de Freio         |
+| 12   | Luz de Ré            |
+| 33   | Seta Esquerda        |
+| 32   | Seta Direita         |
+| 15   | Buzina               |
+
 
 
 # Dependências do Projeto
@@ -218,35 +302,46 @@ idf.py flash monitor
 
 ---
 
-# Funcionalidades implementadas
+# Funcionalidades
 
-- Bluetooth via Bluepad32
-- Conexão com Gamepad
-- Controle diferencial dos motores
-- Failsafe
-- Arquitetura modular
-- Mapeamento de comandos do controle
-- Estado centralizado do veículo
-
----
-
-# Funcionalidades planejadas
-
-- [ ] Pisca esquerdo
-- [ ] Pisca direito
-- [ ] Pisca-alerta
-- [ ] Farol baixo
-- [ ] Farol médio
-- [ ] Farol alto
-- [ ] Luz de freio
-- [ ] Luz de ré
-- [ ] Buzina
-- [ ] Servo de direção
-- [ ] Controle de velocidade
+- [X] Bluetooth via Bluepad32
+- [X] Conexão com Gamepad
+- [X] Controle diferencial dos motores
+- [X] Failsafe
+- [X] Arquitetura modular
+- [X] Mapeamento de comandos do controle
+- [X] Estado centralizado do veículo
+- [X] Pisca esquerdo, direito e pisca-alerta
+- [X] Farol baixo, médio e alto
+- [X] Luz de freio e de ré
+- [X] Buzina
+- [X] Servo de direção
+- [X] Controle de velocidade
+- [X] Buzina
 - [ ] OTA
 - [ ] Interface Web
 - [ ] Telemetria
 - [ ] Monitoramento de bateria
+
+---
+
+## Filosofia do projeto
+
+Todo o projeto foi desenvolvido para manter desacopladas as seguintes responsabilidades:
+
+- Entrada (Gamepad)
+- Lógica do veículo
+- Hardware
+
+Isso permite substituir qualquer uma dessas camadas sem impactar as demais.
+
+Exemplos:
+
+- substituir Bluetooth por Wi-Fi;
+- utilizar um rádio 2.4 GHz;
+- implementar piloto automático;
+- adicionar sensores;
+- reutilizar os drivers em outro veículo.
 
 ---
 

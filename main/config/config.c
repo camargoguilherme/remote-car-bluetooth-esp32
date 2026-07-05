@@ -21,8 +21,8 @@ static void set_defaults(AppConfig* config)
 	config->preferred_controller_timeout_ms = 10000;
 	config->steering_deadzone = 10;
 	config->throttle_deadzone = 10;
-	config->invert_left_motor = false;
-	config->invert_right_motor = false;
+	config->invert_drive_motor = false;
+	config->invert_steering_motor = false;
 	config->invert_steering = false;
 }
 
@@ -92,11 +92,11 @@ void config_load(void)
 	}
 
 	uint8_t bool_value = 0;
-	if (nvs_get_u8(handle, "invert_left_motor", &bool_value) == ESP_OK) {
-		s_config.invert_left_motor = bool_value != 0;
+	if (nvs_get_u8(handle, "invert_drive_motor", &bool_value) == ESP_OK) {
+		s_config.invert_drive_motor = bool_value != 0;
 	}
-	if (nvs_get_u8(handle, "invert_right_motor", &bool_value) == ESP_OK) {
-		s_config.invert_right_motor = bool_value != 0;
+	if (nvs_get_u8(handle, "invert_steering_motor", &bool_value) == ESP_OK) {
+		s_config.invert_steering_motor = bool_value != 0;
 	}
 	if (nvs_get_u8(handle, "invert_steering", &bool_value) == ESP_OK) {
 		s_config.invert_steering = bool_value != 0;
@@ -119,8 +119,8 @@ void config_save(void)
 	ESP_ERROR_CHECK(nvs_set_u32(handle, "preferred_controller_timeout_ms", s_config.preferred_controller_timeout_ms));
 	ESP_ERROR_CHECK(nvs_set_i32(handle, "steering_deadzone", s_config.steering_deadzone));
 	ESP_ERROR_CHECK(nvs_set_i32(handle, "throttle_deadzone", s_config.throttle_deadzone));
-	ESP_ERROR_CHECK(nvs_set_u8(handle, "invert_left_motor", s_config.invert_left_motor ? 1 : 0));
-	ESP_ERROR_CHECK(nvs_set_u8(handle, "invert_right_motor", s_config.invert_right_motor ? 1 : 0));
+	ESP_ERROR_CHECK(nvs_set_u8(handle, "invert_drive_motor", s_config.invert_drive_motor ? 1 : 0));
+	ESP_ERROR_CHECK(nvs_set_u8(handle, "invert_steering_motor", s_config.invert_steering_motor ? 1 : 0));
 	ESP_ERROR_CHECK(nvs_set_u8(handle, "invert_steering", s_config.invert_steering ? 1 : 0));
 	ESP_ERROR_CHECK(nvs_commit(handle));
 	nvs_close(handle);

@@ -27,35 +27,18 @@ void gamepad_map_controller(const uni_gamepad_t* controller, const AppConfig* co
     if (controller == NULL || command == NULL)
         return;
 
-    if (controller->dpad != 0) {
+    steering = util_axis_to_percent(controller->axis_x);
 
-        if (controller->dpad & DPAD_UP)
-            throttle = 100;
+    int accel = util_axis_to_percent(controller->throttle);
+    int brake = util_axis_to_percent(controller->brake);
 
-        if (controller->dpad & DPAD_DOWN)
-            throttle = -100;
-
-        if (controller->dpad & DPAD_LEFT)
-            steering = -70;
-
-        if (controller->dpad & DPAD_RIGHT)
-            steering = 70;
-    }
-    else {
-
-        throttle = -util_axis_to_percent(controller->axis_y);
-        steering = util_axis_to_percent(controller->axis_x);
-    }
+    throttle = accel - brake;
 
     if (config != NULL) {
 
-        steering = util_apply_deadzone(
-            steering,
-            config->steering_deadzone);
+        steering = util_apply_deadzone(steering, config->steering_deadzone);
 
-        throttle = util_apply_deadzone(
-            throttle,
-            config->throttle_deadzone);
+        throttle = util_apply_deadzone(throttle, config->throttle_deadzone);
 
         if (config->invert_steering)
             steering = -steering;
@@ -64,15 +47,11 @@ void gamepad_map_controller(const uni_gamepad_t* controller, const AppConfig* co
     command->steering = steering;
     command->throttle = throttle;
     command->horn_pressed =  (controller->buttons & BUTTON_A) != 0;
-    command->toggle_headlight = button_pressed(&s_button_state, controller->buttons, BUTTON_Y);
-    command->toggle_left_indicator =  button_pressed(&s_button_state, controller->buttons, BUTTON_SHOULDER_L);
-    command->toggle_right_indicator = button_pressed(&s_button_state, controller->buttons, BUTTON_SHOULDER_R);
-    command->toggle_hazard = button_pressed(&s_button_state, controller->buttons, MISC_BUTTON_SELECT);
+    command->toggle_hazard = button_pressed(&s_button_state, controller->buttons, BUTTON_B);
+    command->toggle_left_indicator =  dpad_pressed(&s_button_state, controller->dpad, DPAD_LEFT);
+    command->toggle_right_indicator = dpad_pressed(&s_button_state, controller->dpad, DPAD_RIGHT);
+    command->headlight_up = dpad_pressed(&s_button_state, controller->dpad, DPAD_UP);
+    command->headlight_down = dpad_pressed(&s_button_state, controller->dpad, DPAD_DOWN);
 
-    button_state_update(&s_button_state, controller->buttons, controller->misc_buttons);
-
-    if (command->toggle_headlight)
-    {
-        ESP_LOGI(TAG, "Toggle Headlight");
-    }
+    button_state_update(&s_button_state, controller->buttons, controller->dpad, controller->misc_buttons);
 }

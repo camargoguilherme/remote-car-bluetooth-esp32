@@ -62,8 +62,8 @@ typedef struct
 
 void vehicle_init(void);
 VehicleState* vehicle_get(void);
+void vehicle_apply_command(const VehicleCommand* command);
+void vehicle_reset(void);
 void apply_motion(const VehicleCommand* command);
 void apply_lights(const VehicleCommand* command);
 void apply_horn(const VehicleCommand* command);
-void vehicle_apply_command(const VehicleCommand* command);
-void vehicle_reset(void);
