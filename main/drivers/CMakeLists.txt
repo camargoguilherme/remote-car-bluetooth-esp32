@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS
+        "horn.c"
+        "lights.c"
+        "motors.c"
+        "pwm.c"
+    INCLUDE_DIRS
+        "."
+)

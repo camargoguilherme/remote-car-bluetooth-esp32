@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS
+        "gamepad_button_state.c"
+        "gamepad_logger.c"
+        "gamepad_mapper.c"
+        "gamepad.c"
+    INCLUDE_DIRS
+        "."
+)

@@ -1,0 +1,25 @@
+idf_component_register(
+    SRCS
+        "bluetooth/bluetooth.c"
+        "board/board.c"
+        "config/config.c"
+        "drivers/horn.c"
+        "drivers/lights.c"
+        "drivers/motors.c"
+        "drivers/pwm.c"
+        "gamepad/gamepad_button_state.c"
+        "gamepad/gamepad_logger.c"
+        "gamepad/gamepad_mapper.c"
+        "gamepad/gamepad.c"
+        "vehicle/vehicle.c"
+        "vehicle/vehicle_command.c"
+        "failsafe.c"
+        "main.c"
+        "util.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        driver
+        bluepad32
+        nvs_flash
+    )
