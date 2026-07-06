@@ -1,5 +1,6 @@
 #include <stdbool.h>
 
+#include "driver/gpio.h"
 #include "esp_check.h"
 
 #include "drivers/pwm.h"
@@ -11,6 +12,8 @@
 #define PWM_TIMER LEDC_TIMER_0
 
 static bool s_initialized;
+
+static bool s_channel_used[LEDC_CHANNEL_MAX];
 
 static uint32_t pwm_max_duty(void)
 {
@@ -36,6 +39,14 @@ void pwm_init(void)
 
 void pwm_attach_channel(ledc_channel_t channel, gpio_num_t gpio)
 {
+    if (s_channel_used[channel])
+    {
+        ESP_LOGE(TAG, "Canal LEDC %d já está em uso", channel);
+        abort();
+    }
+
+    s_channel_used[channel] = true;
+
     ledc_channel_config_t channel_config = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = channel,

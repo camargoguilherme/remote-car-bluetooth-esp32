@@ -5,37 +5,41 @@
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "esp_err.h"
+#include "esp_log.h"
 
-#include "config/config.h"
 #include "board/board.h"
+#include "common/util.h"
+#include "config/config.h"
 #include "drivers/motors.h"
+#include "drivers/pwm.h"
 #include "vehicle/vehicle.h"
-#include "pwm.h"
-#include "util.h"
 
 #define TAG "motors"
 
-typedef struct {
-	ledc_channel_t pwm_channel;
-	gpio_num_t pwm_gpio;
-	gpio_num_t in1_gpio;
-	gpio_num_t in2_gpio;
-	bool invert;
+typedef struct
+{
+    ledc_channel_t channel_a;
+    ledc_channel_t channel_b;
+    gpio_num_t pin_a;
+    gpio_num_t pin_b;
+		int last_speed;
+    bool invert;
+
 } MotorChannel;
 
 static MotorChannel s_drive_motor = {
-	.pwm_channel = BOARD_CHANNEL_DRIVE_MOTOR,
-	.pwm_gpio = BOARD_PIN_DRIVE_MOTOR_PWM,
-	.in1_gpio = BOARD_PIN_DRIVE_MOTOR_IN1,
-	.in2_gpio = BOARD_PIN_DRIVE_MOTOR_IN2,
+	.channel_a = BOARD_CHANNEL_DRIVE_MOTOR_A,
+	.channel_b = BOARD_CHANNEL_DRIVE_MOTOR_B,
+	.pin_a = BOARD_PIN_DRIVE_MOTOR_A,
+	.pin_b = BOARD_PIN_DRIVE_MOTOR_B,
 	.invert = false,
 };
 
 static MotorChannel s_steering_motor = {
-	.pwm_channel = BOARD_CHANNEL_STEERING_MOTOR,
-	.pwm_gpio = BOARD_PIN_STEERING_MOTOR_PWM,
-	.in1_gpio = BOARD_PIN_STEERING_MOTOR_IN1,
-	.in2_gpio = BOARD_PIN_STEERING_MOTOR_IN2,
+	.channel_a = BOARD_CHANNEL_STEERING_MOTOR_A,
+	.channel_b = BOARD_CHANNEL_STEERING_MOTOR_B,
+	.pin_a = BOARD_PIN_STEERING_MOTOR_A,
+	.pin_b = BOARD_PIN_STEERING_MOTOR_B,
 	.invert = false,
 };
 
@@ -53,34 +57,48 @@ static void motor_gpio_init(gpio_num_t gpio)
 
 static void motor_init(MotorChannel* motor)
 {
-	motor_gpio_init(motor->in1_gpio);
-	motor_gpio_init(motor->in2_gpio);
-	ESP_ERROR_CHECK(gpio_set_level(motor->in1_gpio, 0));
-	ESP_ERROR_CHECK(gpio_set_level(motor->in2_gpio, 0));
-	pwm_attach_channel(motor->pwm_channel, motor->pwm_gpio);
+	motor_gpio_init(motor->pin_a);
+	motor_gpio_init(motor->pin_b);
+
+	ESP_ERROR_CHECK(gpio_set_level(motor->pin_a, 0));
+	ESP_ERROR_CHECK(gpio_set_level(motor->pin_b, 0));
+
+	pwm_attach_channel(motor->channel_a, motor->pin_a);
+	pwm_attach_channel(motor->channel_b, motor->pin_b);
 }
 
 static void motor_set_speed(MotorChannel* motor, int speed_percent)
-{
+{	
 	speed_percent = util_clamp_percent(speed_percent);
 
-	if (motor->invert) {
+	if (motor->invert)
 		speed_percent = -speed_percent;
-	}
 
-	if (speed_percent == 0) {
-		ESP_ERROR_CHECK(gpio_set_level(motor->in1_gpio, 0));
-		ESP_ERROR_CHECK(gpio_set_level(motor->in2_gpio, 0));
-		pwm_set_duty(motor->pwm_channel, 0);
+	// Não faz nada se a velocidade não mudou
+	if (speed_percent == motor->last_speed)
 		return;
+
+	motor->last_speed = speed_percent;
+
+	uint32_t duty = util_percent_to_duty(speed_percent, pwm_get_max_duty());
+
+	if (speed_percent == 0)
+	{
+			pwm_set_duty(motor->channel_a, 0);
+			pwm_set_duty(motor->channel_b, 0);
+			return;
 	}
 
-	bool forward = speed_percent > 0;
-	uint32_t duty = (uint32_t)abs(speed_percent) * pwm_get_max_duty() / 100;
-
-	ESP_ERROR_CHECK(gpio_set_level(motor->in1_gpio, forward ? 1 : 0));
-	ESP_ERROR_CHECK(gpio_set_level(motor->in2_gpio, forward ? 0 : 1));
-	pwm_set_duty(motor->pwm_channel, duty);
+	if (speed_percent > 0)
+	{
+			pwm_set_duty(motor->channel_a, duty);
+			pwm_set_duty(motor->channel_b, 0);
+	}
+	else
+	{
+			pwm_set_duty(motor->channel_a, 0);
+			pwm_set_duty(motor->channel_b, duty);
+	}
 }
 
 void motors_init(const AppConfig* config)
@@ -110,7 +128,7 @@ void motors_apply(const VehicleState* state)
 			return;
 	}
 
-	int speed = util_clamp_percent(state->motion.throttle + state->motion.throttle);
+	int speed = util_clamp_percent(state->motion.throttle);
 	int steering = util_clamp_percent(state->motion.steering);
 
 	motor_set_speed(&s_drive_motor, speed);

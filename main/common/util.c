@@ -1,4 +1,4 @@
-#include "util.h"
+#include "common/util.h"
 
 #include <stdlib.h>
 
@@ -16,6 +16,13 @@ int util_clamp_int(int value, int min_value, int max_value)
 int util_clamp_percent(int value)
 {
     return util_clamp_int(value, -100, 100);
+}
+
+uint32_t util_percent_to_duty(int percent, uint32_t max_duty)
+{
+    percent = abs(util_clamp_percent(percent));
+
+    return ((uint32_t)percent * max_duty) / 100;
 }
 
 int util_apply_deadzone(int value, int deadzone)

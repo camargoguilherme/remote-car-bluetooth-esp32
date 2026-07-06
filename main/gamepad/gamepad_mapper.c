@@ -2,11 +2,11 @@
 
 #include "esp_log.h"
 
-#include "gamepad/gamepad_button_state.h"
+#include "common/util.h"
 #include "config/config.h"
+#include "gamepad/gamepad_button_state.h"
 #include "gamepad/gamepad_mapper.h"
 #include "vehicle/vehicle_command.h"
-#include "util.h"
 
 static ButtonState s_button_state;
 static bool s_initialized = false;
@@ -35,11 +35,8 @@ void gamepad_map_controller(const uni_gamepad_t* controller, const AppConfig* co
     throttle = accel - brake;
 
     if (config != NULL) {
-
         steering = util_apply_deadzone(steering, config->steering_deadzone);
-
         throttle = util_apply_deadzone(throttle, config->throttle_deadzone);
-
         if (config->invert_steering)
             steering = -steering;
     }
@@ -48,8 +45,8 @@ void gamepad_map_controller(const uni_gamepad_t* controller, const AppConfig* co
     command->throttle = throttle;
     command->horn_pressed =  (controller->buttons & BUTTON_A) != 0;
     command->toggle_hazard = button_pressed(&s_button_state, controller->buttons, BUTTON_B);
-    command->toggle_left_indicator =  dpad_pressed(&s_button_state, controller->dpad, DPAD_LEFT);
-    command->toggle_right_indicator = dpad_pressed(&s_button_state, controller->dpad, DPAD_RIGHT);
+    command->toggle_left_indicator =  button_pressed(&s_button_state, controller->buttons, BUTTON_SHOULDER_L);
+    command->toggle_right_indicator = button_pressed(&s_button_state, controller->buttons, BUTTON_SHOULDER_R);
     command->headlight_up = dpad_pressed(&s_button_state, controller->dpad, DPAD_UP);
     command->headlight_down = dpad_pressed(&s_button_state, controller->dpad, DPAD_DOWN);
 

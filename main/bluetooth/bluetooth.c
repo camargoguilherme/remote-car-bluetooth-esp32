@@ -10,9 +10,9 @@
 #include "uni.h"
 
 #include "bluetooth/bluetooth.h"
+#include "bluetooth/bluetooth_event.h"
 #include "config/config.h"
 #include "gamepad/gamepad.h"
-#include "vehicle/vehicle.h"
 
 #define TAG "bluetooth"
 
@@ -23,12 +23,14 @@ static bool s_preferred_controller_enabled;
 static bool s_preferred_controller_valid;
 static TickType_t s_preferred_controller_deadline;
 static bd_addr_t s_preferred_controller_addr;
+static bool s_connected = false;
 
-static void emit_state(void)
+static void emit_event(const BluetoothEvent* event)
 {
-    if (s_gamepad_callback != NULL) {
+    if (s_gamepad_callback != NULL)
+    {
         s_gamepad_callback(
-            vehicle_get(),
+            event,
             s_gamepad_callback_context);
     }
 }
@@ -103,24 +105,33 @@ static uni_error_t platform_on_device_discovered(bd_addr_t addr, const char* nam
 static void platform_on_device_connected(uni_hid_device_t* d)
 {
 	ESP_LOGI(TAG, "Controle conectado: %p", (void*)d);
+	s_connected = true;
 }
 
 static void platform_on_device_disconnected(uni_hid_device_t* d)
 {
 	ESP_LOGI(TAG, "Controle desconectado: %p", (void*)d);
-	vehicle_reset();
+	s_connected = false;
 
-	vehicle_get()->status.connected = true;
-	
-	emit_state();
+	BluetoothEvent event = {
+		.type = BLUETOOTH_EVENT_DISCONNECTED
+	};
+
+	emit_event(&event);
 }
 
 static uni_error_t platform_on_device_ready(uni_hid_device_t* d)
 {
 	(void)d;
 
-	vehicle_reset();
-	emit_state();
+	s_connected = true;
+
+	BluetoothEvent event = {
+			.type = BLUETOOTH_EVENT_CONNECTED,
+	};
+
+	emit_event(&event);
+
 	ESP_LOGI(TAG, "Controle pronto: %p", (void*)d);
 	return UNI_ERROR_SUCCESS;
 }
@@ -140,8 +151,13 @@ static void platform_on_controller_data(uni_hid_device_t* d, uni_controller_t* c
 		return;
 	}
 
-	gamepad_parse_controller(&ctl->gamepad, s_config);
-	emit_state();
+	BluetoothEvent event = {0};
+
+	event.type = BLUETOOTH_EVENT_COMMAND;
+
+	gamepad_parse_controller(&ctl->gamepad, s_config, &event.data.command);
+
+	emit_event(&event);
 }
 
 static const uni_property_t* platform_get_property(uni_property_idx_t idx)
@@ -173,7 +189,6 @@ void bluetooth_init(const AppConfig* config, BluetoothGamepadCallback callback, 
 	s_config = config;
 	s_gamepad_callback = callback;
 	s_gamepad_callback_context = context;
-	vehicle_reset();
 
 	btstack_init();
 	uni_platform_set_custom(get_my_platform());
@@ -187,5 +202,5 @@ void bluetooth_run(void)
 
 bool bluetooth_is_connected(void)
 {
-    return vehicle_get()->status.connected;
+	return s_connected;
 }

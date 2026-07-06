@@ -2,6 +2,8 @@ idf_component_register(
     SRCS
         "bluetooth/bluetooth.c"
         "board/board.c"
+        "common/failsafe.c"
+        "common/util.c"
         "config/config.c"
         "drivers/horn.c"
         "drivers/lights.c"
@@ -13,9 +15,8 @@ idf_component_register(
         "gamepad/gamepad.c"
         "vehicle/vehicle.c"
         "vehicle/vehicle_command.c"
-        "failsafe.c"
+        "app.c"
         "main.c"
-        "util.c"
     INCLUDE_DIRS
         "."
     REQUIRES
