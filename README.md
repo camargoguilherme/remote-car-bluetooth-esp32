@@ -166,12 +166,12 @@ Cada driver lê o `VehicleState` e controla seus respectivos GPIOs.
 | Controle             | Função                       |
 | -------------------- | ---------------------------- |
 | Analógico esquerdo X | Direção                      |
+| R1                   | Alterna seta esquerda        |
+| L1                   | Alterna seta direita         |
 | R2                   | Acelerar                     |
 | L2                   | Freio / Ré                   |
 | A                    | Buzina                       |
 | B                    | Pisca-alerta                 |
-| DPad ←               | Alterna seta esquerda        |
-| DPad →               | Alterna seta direita         |
 | DPad ↑               | Aumenta intensidade do farol |
 | DPad ↓               | Diminui intensidade do farol |
 
@@ -180,19 +180,17 @@ Cada driver lê o `VehicleState` e controla seus respectivos GPIOs.
 ## Mapeamento do GPIO
 | GPIO | Função               |
 | ---- | -------------------- |
-| 5    | PWM Motor de Tração  |
-| 18   | IN1 Motor de Tração  |
-| 19   | IN2 Motor de Tração  |
-| 21   | PWM Motor de Direção |
-| 22   | IN1 Motor de Direção |
-| 23   | IN2 Motor de Direção |
+| 18   | A Motor de Tração    |
+| 19   | B Motor de Tração    |
+| 22   | A Motor de Direção   |
+| 23   | B Motor de Direção   |
 | 25   | Farol PWM            |
 | 14   | Lanterna             |
 | 13   | Luz de Freio         |
 | 12   | Luz de Ré            |
 | 33   | Seta Esquerda        |
 | 32   | Seta Direita         |
-| 15   | Buzina               |
+| 5    | Buzina               |
 
 
 
@@ -203,9 +201,9 @@ O projeto utiliza bibliotecas externas que devem estar presentes na pasta `compo
 Atualmente são utilizadas as seguintes versões:
 
 | Componente | Versão | Tag |
-|------------|---------|------|
-| Bluepad32 | v4.2.0 | 4.2.0 |
-| BTstack | v1.6.2 | v1.6.2 |
+|------------|---------|---------|
+| Bluepad32  | v4.2.0  | 4.2.0   |
+| BTstack    | v1.6.2  | v1.6.2  |
 
 Estrutura esperada:
 
@@ -259,14 +257,14 @@ git clone --branch v1.6.2 https://github.com/bluekitchen/btstack.git
 
 Ferramentas utilizadas durante o desenvolvimento:
 
-| Ferramenta | Versão |
-|------------|---------|
-| ESP-IDF | v5.3.5 |
-| ESP32 | ESP32-WROOM |
-| Bluepad32 | v4.2.0 |
-| BTstack | v1.6.2 |
-| Ninja | 1.12.1 |
-| GCC Xtensa | 13.2.0 |
+| Ferramenta | Versão         |
+|------------|----------------|
+| ESP-IDF    | v5.3.5         |
+| ESP32      | ESP32-WROOM    |
+| Bluepad32  | v4.2.0         |
+| BTstack    | v1.6.2         |
+| Ninja      | 1.12.1         |
+| GCC Xtensa | 13.2.0         |
 
 ---
 
