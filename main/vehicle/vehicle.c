@@ -5,11 +5,13 @@
 #include "freertos/timers.h"
 
 
+#include "board/board.h"
 #include "config/config.h"
 #include "drivers/horn.h"
 #include "drivers/lights.h"
 #include "drivers/motors.h"
 #include "vehicle/vehicle.h"
+#include "app_config.h"
 
 static VehicleState s_vehicle;
 
@@ -25,13 +27,17 @@ static void vehicle_output_task(void* arg)
         lights_apply(vehicle);
         horn_apply(vehicle);
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(BOARD_OUTPUT_UPDATE_INTERVAL_MS));
     }
 }
 
 void create_task_vehicle_output(void)
 {
-    xTaskCreate(vehicle_output_task, "vehicle_output", 4096, NULL, 5, NULL);
+    xTaskCreate(vehicle_output_task, "vehicle_output", 
+        BOARD_TASK_STACK_VEHICLE_OUTPUT,
+        NULL, 
+        BOARD_TASK_PRIORITY_VEHICLE_OUTPUT, 
+        NULL);
 }
 
 void vehicle_init(void)
@@ -155,12 +161,21 @@ void vehicle_reset(void)
 {
     memset(&s_vehicle, 0, sizeof(s_vehicle));
 
+    s_vehicle.status.connected = false;
+    s_vehicle.status.failsafe = false;
+    s_vehicle.status.emergency_stop = false;
+
+    s_vehicle.motion.throttle = 0;
+    s_vehicle.motion.steering = 0;
+    
     s_vehicle.lights.headlight = HEADLIGHT_OFF;
+    s_vehicle.lights.left_indicator = false;
+    s_vehicle.lights.right_indicator = false;
     s_vehicle.lights.hazard = false;
     s_vehicle.lights.tail_light = false;
     s_vehicle.lights.reverse_light = false;
     s_vehicle.lights.brake_light = false;
-    s_vehicle.status.connected = false;
-    s_vehicle.status.failsafe = false;
-    s_vehicle.status.emergency_stop = false;
+
+    s_vehicle.horn.enabled = false;
+    
 }

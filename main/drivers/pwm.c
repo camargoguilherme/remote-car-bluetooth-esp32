@@ -3,13 +3,11 @@
 #include "driver/gpio.h"
 #include "esp_check.h"
 
+#include "board/board.h"
 #include "drivers/pwm.h"
+#include "app_config.h"
 
 #define TAG "pwm"
-
-#define PWM_FREQUENCY_HZ 20000
-#define PWM_RESOLUTION LEDC_TIMER_10_BIT
-#define PWM_TIMER LEDC_TIMER_0
 
 static bool s_initialized;
 
@@ -17,7 +15,7 @@ static bool s_channel_used[LEDC_CHANNEL_MAX];
 
 static uint32_t pwm_max_duty(void)
 {
-    return (1U << PWM_RESOLUTION) - 1U;
+    return (1U << BOARD_PWM_RESOLUTION) - 1U;
 }
 
 void pwm_init(void)
@@ -28,9 +26,9 @@ void pwm_init(void)
 
     ledc_timer_config_t timer_config = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
-        .duty_resolution = PWM_RESOLUTION,
-        .timer_num = PWM_TIMER,
-        .freq_hz = PWM_FREQUENCY_HZ,
+        .duty_resolution = BOARD_PWM_RESOLUTION,
+        .timer_num = BOARD_PWM_TIMER,
+        .freq_hz = BOARD_PWM_FREQUENCY_HZ,
         .clk_cfg = LEDC_AUTO_CLK,
     };
     ESP_ERROR_CHECK(ledc_timer_config(&timer_config));
@@ -50,7 +48,7 @@ void pwm_attach_channel(ledc_channel_t channel, gpio_num_t gpio)
     ledc_channel_config_t channel_config = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = channel,
-        .timer_sel = PWM_TIMER,
+        .timer_sel = BOARD_PWM_TIMER,
         .gpio_num = gpio,
         .duty = 0,
         .hpoint = 0,

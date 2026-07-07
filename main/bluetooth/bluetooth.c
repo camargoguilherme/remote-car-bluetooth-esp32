@@ -166,7 +166,7 @@ static const uni_property_t* platform_get_property(uni_property_idx_t idx)
     return NULL;
 }
 
-static struct uni_platform* get_my_platform(void)
+static struct uni_platform* get_platform(void)
 {
 	static struct uni_platform platform = {
 			.name = "remote_car",
@@ -191,7 +191,7 @@ void bluetooth_init(const AppConfig* config, BluetoothGamepadCallback callback, 
 	s_gamepad_callback_context = context;
 
 	btstack_init();
-	uni_platform_set_custom(get_my_platform());
+	uni_platform_set_custom(get_platform());
 	uni_init(0, NULL);
 }
 

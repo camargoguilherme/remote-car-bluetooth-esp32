@@ -1,12 +1,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "board/board.h"
+#include "common/failsafe.h"
 #include "config/config.h"
-#include "failsafe.h"
+#include "app_config.h"
 
 #define TAG "failsafe"
-
-#define FAILSAFE_PERIOD_MS 50
 
 static volatile TickType_t s_last_input_tick;
 static uint32_t s_input_timeout_ms;
@@ -26,7 +26,7 @@ static void failsafe_task(void* arg)
 			}
 		}
 
-		vTaskDelay(pdMS_TO_TICKS(FAILSAFE_PERIOD_MS));
+		vTaskDelay(pdMS_TO_TICKS(BOARD_FAILSAFE_PERIOD_MS));
 	}
 }
 
@@ -36,7 +36,11 @@ void failsafe_init(const AppConfig* config, FailsafeStopCallback stop_callback)
 	s_input_timeout_ms = config != NULL ? config->input_timeout_ms : 300;
 	s_stop_callback = stop_callback;
 
-	xTaskCreate(failsafe_task, "failsafe_task", 3072, NULL, 5, NULL);
+	xTaskCreate(failsafe_task, "failsafe_task", 
+			BOARD_TASK_STACK_FAILSAFE, 
+			NULL, 
+			BOARD_TASK_PRIORITY_FAILSAFE, 
+			NULL);
 }
 
 void failsafe_notify_input(void)

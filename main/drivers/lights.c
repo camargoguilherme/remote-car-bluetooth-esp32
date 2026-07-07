@@ -7,6 +7,7 @@
 #include "common/util.h"
 #include "drivers/lights.h"
 #include "drivers/pwm.h"
+#include "app_config.h"
 
 
 static bool s_blink_state = false;
@@ -28,13 +29,13 @@ static uint32_t headlight_to_duty(HeadlightMode mode)
     switch (mode)
     {
         case HEADLIGHT_LOW:
-            return util_percent_to_duty(30, pwm_get_max_duty());
+            return util_percent_to_duty(BOARD_HEADLIGHT_LOW_PERCENT, pwm_get_max_duty());
 
         case HEADLIGHT_MEDIUM:
-            return util_percent_to_duty(60, pwm_get_max_duty());
+            return util_percent_to_duty(BOARD_HEADLIGHT_MEDIUM_PERCENT, pwm_get_max_duty());
 
         case HEADLIGHT_HIGH:
-            return util_percent_to_duty(100, pwm_get_max_duty());
+            return util_percent_to_duty(BOARD_HEADLIGHT_HIGH_PERCENT, pwm_get_max_duty());
 
         case HEADLIGHT_OFF:
         default:

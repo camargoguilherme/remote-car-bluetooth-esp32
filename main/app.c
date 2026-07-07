@@ -11,6 +11,7 @@
 #include "gamepad/gamepad.h"
 #include "vehicle/vehicle.h"
 #include "app.h"
+#include "app_config.h"
 
 
 static void on_bluetooth_event(const BluetoothEvent* event, void* context)
