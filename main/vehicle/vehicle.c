@@ -4,9 +4,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 
-
 #include "board/board.h"
 #include "config/config.h"
+#include "drivers/drive/drive.h"
 #include "drivers/horn.h"
 #include "drivers/lights.h"
 #include "drivers/motors.h"
@@ -23,7 +23,7 @@ static void vehicle_output_task(void* arg)
     {
         const VehicleState* vehicle = vehicle_get();
 
-        motors_apply(vehicle);
+        drive_apply(vehicle);
         lights_apply(vehicle);
         horn_apply(vehicle);
 
@@ -44,6 +44,7 @@ void vehicle_init(void)
 {
     memset(&s_vehicle, 0, sizeof(s_vehicle));
     motors_init(config_get());
+    drive_init();
     horn_init();
     lights_init();
     create_task_vehicle_output();

@@ -1,11 +1,14 @@
 #pragma once
 
-#include "common/util.h"
 #include "config/config.h"
-#include "drivers/motors.h"
-#include "drivers/pwm.h"
-#include "vehicle/vehicle.h"
+
+typedef enum
+{
+	MOTOR_1 = 0,
+	MOTOR_2,
+	MOTOR_COUNT
+} MotorId;
 
 void motors_init(const AppConfig* config);
+void motors_set_speed(MotorId motor, int speed_percent);
 void motors_stop(void);
-void motors_apply(const VehicleState* state);

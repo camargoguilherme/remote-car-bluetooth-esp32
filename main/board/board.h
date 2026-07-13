@@ -2,23 +2,37 @@
 
 #include "driver/gpio.h"
 
+typedef enum
+{
+    DRIVE_ACKERMANN = 0,
+    DRIVE_DIFFERENTIAL
+} BoardDriveType;
+
+#define BOARD_DRIVE_TYPE                                DRIVE_ACKERMANN
+
+#define BOARD_LEFT_MOTOR                                MOTOR_1
+#define BOARD_RIGHT_MOTOR                               MOTOR_2
+
+#define BOARD_DRIVE_MOTOR                               MOTOR_1
+#define BOARD_STEERING_MOTOR                            MOTOR_2
+
 /* ============================================================
  * GPIO / CHANNELS
  * ============================================================ */
 /* ============================================================
  * Motores
  * ============================================================ */
-#define BOARD_CHANNEL_DRIVE_MOTOR_A                     LEDC_CHANNEL_0
-#define BOARD_CHANNEL_DRIVE_MOTOR_B                     LEDC_CHANNEL_1
+#define BOARD_CHANNEL_MOTOR1_A                          LEDC_CHANNEL_0
+#define BOARD_CHANNEL_MOTOR1_B                          LEDC_CHANNEL_1
 
-#define BOARD_PIN_DRIVE_MOTOR_A                         GPIO_NUM_18
-#define BOARD_PIN_DRIVE_MOTOR_B                         GPIO_NUM_19
+#define BOARD_PIN_MOTOR1_A                              GPIO_NUM_18
+#define BOARD_PIN_MOTOR1_B                              GPIO_NUM_19
 
-#define BOARD_CHANNEL_STEERING_MOTOR_A                  LEDC_CHANNEL_2
-#define BOARD_CHANNEL_STEERING_MOTOR_B                  LEDC_CHANNEL_3
+#define BOARD_CHANNEL_MOTOR2_A                          LEDC_CHANNEL_2
+#define BOARD_CHANNEL_MOTOR2_B                          LEDC_CHANNEL_3
 
-#define BOARD_PIN_STEERING_MOTOR_A                      GPIO_NUM_22
-#define BOARD_PIN_STEERING_MOTOR_B                      GPIO_NUM_23
+#define BOARD_PIN_MOTOR2_A                              GPIO_NUM_22
+#define BOARD_PIN_MOTOR2_B                              GPIO_NUM_23
 
 /* ============================================================
  * Faróis

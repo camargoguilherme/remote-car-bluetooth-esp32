@@ -1,6 +1,6 @@
 
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stddef.h>
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -12,7 +12,6 @@
 #include "config/config.h"
 #include "drivers/motors.h"
 #include "drivers/pwm.h"
-#include "vehicle/vehicle.h"
 
 #define TAG "motors"
 
@@ -22,25 +21,26 @@ typedef struct
     ledc_channel_t channel_b;
     gpio_num_t pin_a;
     gpio_num_t pin_b;
-		int last_speed;
+    int last_speed;
     bool invert;
 
 } MotorChannel;
 
-static MotorChannel s_drive_motor = {
-	.channel_a = BOARD_CHANNEL_DRIVE_MOTOR_A,
-	.channel_b = BOARD_CHANNEL_DRIVE_MOTOR_B,
-	.pin_a = BOARD_PIN_DRIVE_MOTOR_A,
-	.pin_b = BOARD_PIN_DRIVE_MOTOR_B,
-	.invert = false,
-};
-
-static MotorChannel s_steering_motor = {
-	.channel_a = BOARD_CHANNEL_STEERING_MOTOR_A,
-	.channel_b = BOARD_CHANNEL_STEERING_MOTOR_B,
-	.pin_a = BOARD_PIN_STEERING_MOTOR_A,
-	.pin_b = BOARD_PIN_STEERING_MOTOR_B,
-	.invert = false,
+static MotorChannel s_motors[MOTOR_COUNT] = {
+	[MOTOR_1] = {
+		.channel_a = BOARD_CHANNEL_MOTOR1_A,
+		.channel_b = BOARD_CHANNEL_MOTOR1_B,
+		.pin_a = BOARD_PIN_MOTOR1_A,
+		.pin_b = BOARD_PIN_MOTOR1_B,
+		.invert = false,
+	},
+	[MOTOR_2] = {
+		.channel_a = BOARD_CHANNEL_MOTOR2_A,
+		.channel_b = BOARD_CHANNEL_MOTOR2_B,
+		.pin_a = BOARD_PIN_MOTOR2_A,
+		.pin_b = BOARD_PIN_MOTOR2_B,
+		.invert = false,
+	},
 };
 
 static void motor_gpio_init(gpio_num_t gpio)
@@ -55,8 +55,18 @@ static void motor_gpio_init(gpio_num_t gpio)
 	ESP_ERROR_CHECK(gpio_config(&io_conf));
 }
 
+static MotorChannel* motor_from_id(MotorId motor)
+{
+	if (motor < 0 || motor >= MOTOR_COUNT)
+		return NULL;
+
+	return &s_motors[motor];
+}
+
 static void motor_init(MotorChannel* motor)
 {
+	motor->last_speed = 0;
+
 	motor_gpio_init(motor->pin_a);
 	motor_gpio_init(motor->pin_b);
 
@@ -69,6 +79,9 @@ static void motor_init(MotorChannel* motor)
 
 static void motor_set_speed(MotorChannel* motor, int speed_percent)
 {	
+	if (motor == NULL)
+		return;
+
 	speed_percent = util_clamp_percent(speed_percent);
 
 	if (motor->invert)
@@ -106,31 +119,23 @@ void motors_init(const AppConfig* config)
 	pwm_init();
 
 	if (config != NULL) {
-		s_drive_motor.invert = config->invert_drive_motor;
-		s_steering_motor.invert = config->invert_steering_motor;
+		s_motors[MOTOR_1].invert = config->invert_drive_motor;
+		s_motors[MOTOR_2].invert = config->invert_steering_motor;
 	}
 
-	motor_init(&s_drive_motor);
-	motor_init(&s_steering_motor);
+	for (size_t i = 0; i < MOTOR_COUNT; i++)
+		motor_init(&s_motors[i]);
+
 	motors_stop();
+}
+
+void motors_set_speed(MotorId motor, int speed_percent)
+{
+	motor_set_speed(motor_from_id(motor), speed_percent);
 }
 
 void motors_stop(void)
 {
-	motor_set_speed(&s_drive_motor, 0);
-	motor_set_speed(&s_steering_motor, 0);
-}
-
-void motors_apply(const VehicleState* state)
-{
-	if (state == NULL) {
-			motors_stop();
-			return;
-	}
-
-	int speed = util_clamp_percent(state->motion.throttle);
-	int steering = util_clamp_percent(state->motion.steering);
-
-	motor_set_speed(&s_drive_motor, speed);
-	motor_set_speed(&s_steering_motor, steering);
+	for (size_t i = 0; i < MOTOR_COUNT; i++)
+		motor_set_speed(&s_motors[i], 0);
 }

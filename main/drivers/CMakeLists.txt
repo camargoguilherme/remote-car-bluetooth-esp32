@@ -1,5 +1,8 @@
 idf_component_register(
     SRCS
+        "drive/drive_ackermann.c"
+        "drive/drive_differential.c"
+        "drive/drive.c"
         "horn.c"
         "lights.c"
         "motors.c"

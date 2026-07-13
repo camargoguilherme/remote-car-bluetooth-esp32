@@ -50,7 +50,7 @@ typedef struct
 
 } VehicleStatus;
 
-typedef struct
+typedef struct VehicleState
 {
     VehicleStatus status;
 
