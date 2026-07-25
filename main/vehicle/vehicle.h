@@ -47,6 +47,7 @@ typedef struct
     bool connected;
     bool failsafe;
     bool emergency_stop;
+    bool failsafe_active;
 
 } VehicleStatus;
 

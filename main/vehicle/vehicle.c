@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+#include "esp_log.h"
 
 #include "board/board.h"
 #include "config/config.h"
@@ -11,7 +12,10 @@
 #include "drivers/lights.h"
 #include "drivers/motors.h"
 #include "vehicle/vehicle.h"
+#include "common/failsafe.h"
 #include "app_config.h"
+
+#define TAG "vehicle"
 
 static VehicleState s_vehicle;
 
@@ -21,22 +25,55 @@ static void vehicle_output_task(void* arg)
 
     for (;;)
     {
-        const VehicleState* vehicle = vehicle_get();
+        s_vehicle.status.failsafe_active = failsafe_is_active();
 
-        drive_apply(vehicle);
-        lights_apply(vehicle);
-        horn_apply(vehicle);
+        drive_apply(&s_vehicle);
+        lights_apply(&s_vehicle);
+        horn_apply(&s_vehicle);
 
         vTaskDelay(pdMS_TO_TICKS(BOARD_OUTPUT_UPDATE_INTERVAL_MS));
     }
 }
 
+static void vehicle_telemetry_task(void* arg)
+{
+    (void)arg;
+
+    for (;;)
+    {
+        const VehicleState* vehicle = vehicle_get();
+        ESP_LOGI(TAG,
+         "Stack livre: %u",
+         uxTaskGetStackHighWaterMark(NULL));
+        ESP_LOGI(TAG, "Status: Conn=%d, Failsafe=%d, EmergStop=%d",
+                 vehicle->status.connected, vehicle->status.failsafe_active, vehicle->status.emergency_stop);
+        ESP_LOGI(TAG, "Motion: Steering=%d, Throttle=%d",
+                 vehicle->motion.steering, vehicle->motion.throttle);
+        ESP_LOGI(TAG, "Lights: Headlight=%d, LeftInd=%d, RightInd=%d, Hazard=%d, Tail=%d, Brake=%d, Reverse=%d",
+                 vehicle->lights.headlight, vehicle->lights.left_indicator, vehicle->lights.right_indicator,
+                 vehicle->lights.hazard, vehicle->lights.tail_light, vehicle->lights.brake_light,
+                 vehicle->lights.reverse_light);
+        ESP_LOGI(TAG, "Horn: Enabled=%d", vehicle->horn.enabled);
+
+        vTaskDelay(pdMS_TO_TICKS(BOARD_TELEMETRY_PERIOD_MS));
+    }
+}
+
 void create_task_vehicle_output(void)
 {
-    xTaskCreate(vehicle_output_task, "vehicle_output", 
+    xTaskCreate(vehicle_output_task, "vehicle_output",
         BOARD_TASK_STACK_VEHICLE_OUTPUT,
-        NULL, 
-        BOARD_TASK_PRIORITY_VEHICLE_OUTPUT, 
+        NULL,
+        BOARD_TASK_PRIORITY_VEHICLE_OUTPUT,
+        NULL);
+}
+
+void create_task_vehicle_telemetry(void)
+{
+    xTaskCreate(vehicle_telemetry_task, "vehicle_telemetry",
+        BOARD_TASK_STACK_TELEMETRY,
+        NULL,
+        BOARD_TASK_PRIORITY_TELEMETRY,
         NULL);
 }
 
@@ -48,6 +85,7 @@ void vehicle_init(void)
     horn_init();
     lights_init();
     create_task_vehicle_output();
+    create_task_vehicle_telemetry();
 }
 
 VehicleState* vehicle_get(void)
@@ -55,7 +93,7 @@ VehicleState* vehicle_get(void)
     return &s_vehicle;
 }
 
-void apply_motion(const VehicleCommand* command) 
+void apply_motion(const VehicleCommand* command)
 {
     s_vehicle.motion.steering = command->steering;
     s_vehicle.motion.throttle = command->throttle;
@@ -165,10 +203,11 @@ void vehicle_reset(void)
     s_vehicle.status.connected = false;
     s_vehicle.status.failsafe = false;
     s_vehicle.status.emergency_stop = false;
+    s_vehicle.status.failsafe_active = false;
 
     s_vehicle.motion.throttle = 0;
     s_vehicle.motion.steering = 0;
-    
+
     s_vehicle.lights.headlight = HEADLIGHT_OFF;
     s_vehicle.lights.left_indicator = false;
     s_vehicle.lights.right_indicator = false;

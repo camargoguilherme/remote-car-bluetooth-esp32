@@ -23,6 +23,10 @@
 #define BOARD_TASK_STACK_FAILSAFE                       3072
 #define BOARD_TASK_PRIORITY_FAILSAFE                    5
 
+#define BOARD_TASK_STACK_TELEMETRY                      4096
+#define BOARD_TASK_PRIORITY_TELEMETRY                   3
+#define BOARD_TELEMETRY_PERIOD_MS                       10000
+
 #define BOARD_OUTPUT_UPDATE_INTERVAL_MS                 20
 
 /* ============================================================

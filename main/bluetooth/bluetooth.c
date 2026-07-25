@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "uni.h"
 
 #include "bluetooth/bluetooth.h"
@@ -15,6 +16,7 @@
 #include "gamepad/gamepad.h"
 
 #define TAG "bluetooth"
+#define EVENT_QUEUE_SIZE 10
 
 static const AppConfig* s_config;
 static BluetoothGamepadCallback s_gamepad_callback;
@@ -24,14 +26,31 @@ static bool s_preferred_controller_valid;
 static TickType_t s_preferred_controller_deadline;
 static bd_addr_t s_preferred_controller_addr;
 static bool s_connected = false;
+static QueueHandle_t s_event_queue;
+
+static void bluetooth_event_task(void* arg)
+{
+    BluetoothEvent event;
+    while (true)
+    {
+        if (xQueueReceive(s_event_queue, &event, portMAX_DELAY))
+        {
+            if (s_gamepad_callback != NULL)
+            {
+                s_gamepad_callback(&event, s_gamepad_callback_context);
+            }
+        }
+    }
+}
 
 static void emit_event(const BluetoothEvent* event)
 {
-    if (s_gamepad_callback != NULL)
+    if (s_event_queue != NULL)
     {
-        s_gamepad_callback(
-            event,
-            s_gamepad_callback_context);
+        if (xQueueSend(s_event_queue, event, 0) != pdTRUE)
+        {
+            ESP_LOGW(TAG, "Fila de eventos Bluetooth cheia! Evento descartado.");
+        }
     }
 }
 
@@ -189,6 +208,13 @@ void bluetooth_init(const AppConfig* config, BluetoothGamepadCallback callback, 
 	s_config = config;
 	s_gamepad_callback = callback;
 	s_gamepad_callback_context = context;
+
+	s_event_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(BluetoothEvent));
+	if (s_event_queue == NULL) {
+		ESP_LOGE(TAG, "Falha ao criar fila de eventos Bluetooth");
+	} else {
+		xTaskCreate(bluetooth_event_task, "bt_event_task", 4096, NULL, 5, NULL);
+	}
 
 	btstack_init();
 	uni_platform_set_custom(get_platform());
