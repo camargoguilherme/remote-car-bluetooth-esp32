@@ -146,7 +146,7 @@ static uni_error_t platform_on_device_ready(uni_hid_device_t* d)
 	s_connected = true;
 
 	BluetoothEvent event = {
-			.type = BLUETOOTH_EVENT_CONNECTED,
+		.type = BLUETOOTH_EVENT_CONNECTED,
 	};
 
 	emit_event(&event);

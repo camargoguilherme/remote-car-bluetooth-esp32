@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 
 #include "board/board.h"
@@ -18,6 +19,7 @@
 #define TAG "vehicle"
 
 static VehicleState s_vehicle;
+static SemaphoreHandle_t s_vehicle_mutex;
 
 static void vehicle_output_task(void* arg)
 {
@@ -25,11 +27,16 @@ static void vehicle_output_task(void* arg)
 
     for (;;)
     {
-        s_vehicle.status.failsafe_active = failsafe_is_active();
+        if (xSemaphoreTake(s_vehicle_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            s_vehicle.status.failsafe_active = failsafe_is_active();
+            s_vehicle.status.battery_voltage = board_get_battery_voltage();
 
-        drive_apply(&s_vehicle);
-        lights_apply(&s_vehicle);
-        horn_apply(&s_vehicle);
+            drive_apply(&s_vehicle);
+            lights_apply(&s_vehicle);
+            horn_apply(&s_vehicle);
+            xSemaphoreGive(s_vehicle_mutex);
+        }
 
         vTaskDelay(pdMS_TO_TICKS(BOARD_OUTPUT_UPDATE_INTERVAL_MS));
     }
@@ -41,19 +48,15 @@ static void vehicle_telemetry_task(void* arg)
 
     for (;;)
     {
-        const VehicleState* vehicle = vehicle_get();
-        ESP_LOGI(TAG,
-         "Stack livre: %u",
-         uxTaskGetStackHighWaterMark(NULL));
-        ESP_LOGI(TAG, "Status: Conn=%d, Failsafe=%d, EmergStop=%d",
-                 vehicle->status.connected, vehicle->status.failsafe_active, vehicle->status.emergency_stop);
-        ESP_LOGI(TAG, "Motion: Steering=%d, Throttle=%d",
-                 vehicle->motion.steering, vehicle->motion.throttle);
-        ESP_LOGI(TAG, "Lights: Headlight=%d, LeftInd=%d, RightInd=%d, Hazard=%d, Tail=%d, Brake=%d, Reverse=%d",
-                 vehicle->lights.headlight, vehicle->lights.left_indicator, vehicle->lights.right_indicator,
-                 vehicle->lights.hazard, vehicle->lights.tail_light, vehicle->lights.brake_light,
-                 vehicle->lights.reverse_light);
-        ESP_LOGI(TAG, "Horn: Enabled=%d", vehicle->horn.enabled);
+        if (xSemaphoreTake(s_vehicle_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+        {
+            ESP_LOGI(TAG, "Status: Conn=%d, Failsafe=%d, EmergStop=%d, Batt=%.2fV",
+                     s_vehicle.status.connected, s_vehicle.status.failsafe_active, 
+                     s_vehicle.status.emergency_stop, s_vehicle.status.battery_voltage);
+            ESP_LOGI(TAG, "Motion: Steering=%d, Throttle=%d",
+                     s_vehicle.motion.steering, s_vehicle.motion.throttle);
+            xSemaphoreGive(s_vehicle_mutex);
+        }
 
         vTaskDelay(pdMS_TO_TICKS(BOARD_TELEMETRY_PERIOD_MS));
     }
@@ -77,15 +80,20 @@ void create_task_vehicle_telemetry(void)
         NULL);
 }
 
-void vehicle_init(void)
+esp_err_t vehicle_init(void)
 {
+    s_vehicle_mutex = xSemaphoreCreateMutex();
+    if (s_vehicle_mutex == NULL) return ESP_ERR_NO_MEM;
+
     memset(&s_vehicle, 0, sizeof(s_vehicle));
+    vehicle_reset(false);
     motors_init(config_get());
     drive_init();
     horn_init();
     lights_init();
     create_task_vehicle_output();
     create_task_vehicle_telemetry();
+    return ESP_OK;
 }
 
 VehicleState* vehicle_get(void)
@@ -95,8 +103,12 @@ VehicleState* vehicle_get(void)
 
 void apply_motion(const VehicleCommand* command)
 {
-    s_vehicle.motion.steering = command->steering;
-    s_vehicle.motion.throttle = command->throttle;
+    if (xSemaphoreTake(s_vehicle_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
+    {
+        s_vehicle.motion.steering = command->steering;
+        s_vehicle.motion.throttle = command->throttle;
+        xSemaphoreGive(s_vehicle_mutex);
+    }
 }
 
 void apply_lights(const VehicleCommand* command)
@@ -196,11 +208,11 @@ void vehicle_apply_command(const VehicleCommand* command)
     apply_horn(command);
 }
 
-void vehicle_reset(void)
+void vehicle_reset(bool connected)
 {
     memset(&s_vehicle, 0, sizeof(s_vehicle));
 
-    s_vehicle.status.connected = false;
+    s_vehicle.status.connected = connected;
     s_vehicle.status.failsafe = false;
     s_vehicle.status.emergency_stop = false;
     s_vehicle.status.failsafe_active = false;
@@ -211,11 +223,10 @@ void vehicle_reset(void)
     s_vehicle.lights.headlight = HEADLIGHT_OFF;
     s_vehicle.lights.left_indicator = false;
     s_vehicle.lights.right_indicator = false;
-    s_vehicle.lights.hazard = false;
+    s_vehicle.lights.hazard = !connected;
     s_vehicle.lights.tail_light = false;
     s_vehicle.lights.reverse_light = false;
     s_vehicle.lights.brake_light = false;
 
     s_vehicle.horn.enabled = false;
-    
 }

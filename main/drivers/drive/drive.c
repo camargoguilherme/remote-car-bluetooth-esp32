@@ -57,6 +57,12 @@ void drive_apply(const VehicleState* vehicle)
 {
     if (s_drive != NULL)
     {
+        if (vehicle != NULL && vehicle->status.failsafe_active)
+        {
+            s_drive->stop();
+            return;
+        }
+
         s_drive->apply(vehicle);
     }
 }

@@ -37,6 +37,11 @@ void pwm_init(void)
 
 void pwm_attach_channel(ledc_channel_t channel, gpio_num_t gpio)
 {
+	pwm_attach_channel_to_timer(channel, gpio, BOARD_PWM_TIMER);
+}
+
+void pwm_attach_channel_to_timer(ledc_channel_t channel, gpio_num_t gpio, ledc_timer_t timer)
+{
     if (s_channel_used[channel])
     {
         ESP_LOGE(TAG, "Canal LEDC %d já está em uso", channel);
@@ -48,7 +53,7 @@ void pwm_attach_channel(ledc_channel_t channel, gpio_num_t gpio)
     ledc_channel_config_t channel_config = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = channel,
-        .timer_sel = BOARD_PWM_TIMER,
+        .timer_sel = timer,
         .gpio_num = gpio,
         .duty = 0,
         .hpoint = 0,

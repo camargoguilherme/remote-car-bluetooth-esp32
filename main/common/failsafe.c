@@ -38,18 +38,20 @@ static void failsafe_task(void* arg)
 	}
 }
 
-void failsafe_init(const AppConfig* config, FailsafeStopCallback stop_callback)
+esp_err_t failsafe_init(const AppConfig* config, FailsafeStopCallback stop_callback)
 {
 	s_last_input_tick = xTaskGetTickCount();
 	s_input_timeout_ms = config != NULL ? config->input_timeout_ms : 300;
 	s_stop_callback = stop_callback;
-	s_failsafe_active = false; // Garante que o failsafe começa desativado
+	s_failsafe_active = false; 
 
-	xTaskCreate(failsafe_task, "failsafe_task",
+	BaseType_t ret = xTaskCreate(failsafe_task, "failsafe_task",
 			BOARD_TASK_STACK_FAILSAFE,
 			NULL,
 			BOARD_TASK_PRIORITY_FAILSAFE,
 			NULL);
+    
+    return (ret == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 void failsafe_notify_input(void)

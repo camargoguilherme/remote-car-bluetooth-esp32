@@ -1,6 +1,7 @@
 #pragma once
 
 #include "driver/gpio.h"
+#include "esp_err.h"
 
 typedef enum
 {
@@ -40,6 +41,9 @@ typedef enum
 #define BOARD_CHANNEL_HEADLIGHT                         LEDC_CHANNEL_4
 #define BOARD_PIN_HEADLIGHT                             GPIO_NUM_25
 
+#define BOARD_CHANNEL_SERVO                             LEDC_CHANNEL_5
+#define BOARD_PIN_SERVO                                 GPIO_NUM_26
+
 
 /* ============================================================
  * Lanternas
@@ -62,4 +66,6 @@ typedef enum
  * ============================================================ */
 #define BOARD_PIN_HORN                                  GPIO_NUM_5
 
-void board_init(void);
+esp_err_t board_init(void);
+
+float board_get_battery_voltage(void);

@@ -10,6 +10,6 @@
 
 void app_main(void)
 {
-    app_init();
+    ESP_ERROR_CHECK(app_init());
     app_run();
 }

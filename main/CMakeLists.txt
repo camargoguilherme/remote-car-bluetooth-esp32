@@ -12,6 +12,7 @@ idf_component_register(
         "drivers/lights.c"
         "drivers/motors.c"
         "drivers/pwm.c"
+        "drivers/servo.c"
         "gamepad/gamepad_button_state.c"
         "gamepad/gamepad_logger.c"
         "gamepad/gamepad_mapper.c"
@@ -24,6 +25,7 @@ idf_component_register(
         "."
     REQUIRES
         driver
+        esp_adc
         bluepad32
         nvs_flash
     )

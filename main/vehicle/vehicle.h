@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+#include "esp_err.h"
 #include "vehicle/vehicle_command.h"
 
 typedef enum
@@ -48,6 +49,7 @@ typedef struct
     bool failsafe;
     bool emergency_stop;
     bool failsafe_active;
+    float battery_voltage;
 
 } VehicleStatus;
 
@@ -61,10 +63,10 @@ typedef struct VehicleState
 
 } VehicleState;
 
-void vehicle_init(void);
+esp_err_t vehicle_init(void);
 VehicleState* vehicle_get(void);
 void vehicle_apply_command(const VehicleCommand* command);
-void vehicle_reset(void);
+void vehicle_reset(bool connected);
 void apply_motion(const VehicleCommand* command);
 void apply_lights(const VehicleCommand* command);
 void apply_horn(const VehicleCommand* command);

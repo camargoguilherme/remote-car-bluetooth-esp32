@@ -1,5 +1,7 @@
 # pragma once
 
+#include "esp_err.h"
+
 #include "bluetooth/bluetooth.h"
 #include "common/failsafe.h"
 #include "config/config.h"
@@ -8,5 +10,5 @@
 #include "drivers/motors.h"
 #include "vehicle/vehicle.h"
 
-void app_init(void);
+esp_err_t app_init(void);
 void app_run(void);

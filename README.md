@@ -157,8 +157,18 @@ Responsáveis apenas pelo hardware.
 Cada driver lê o `VehicleState` e controla seus respectivos GPIOs.
 
 - motors
+- servo
 - lights
 - horn
+
+### Modos de direção
+
+O modo é selecionado por `BOARD_DRIVE_TYPE` em `main/board/board.h`:
+
+- `DRIVE_ACKERMANN`: motor 1 faz a tração e o servo no GPIO 26 faz a direção. O segundo motor da ponte H não é usado para esterçar.
+- `DRIVE_DIFFERENTIAL`: motor 1 e motor 2 fazem os lados esquerdo e direito do carrinho. O servo não é inicializado nesse modo.
+
+O servo usa um timer LEDC separado, a 50 Hz. O PWM da ponte H e do farol permanece em 20 kHz.
 
 ---
 
@@ -180,17 +190,22 @@ Cada driver lê o `VehicleState` e controla seus respectivos GPIOs.
 ## Mapeamento do GPIO
 | GPIO | Função               |
 | ---- | -------------------- |
-| 18   | A Motor de Tração    |
-| 19   | B Motor de Tração    |
-| 22   | A Motor de Direção   |
-| 23   | B Motor de Direção   |
-| 25   | Farol PWM            |
-| 14   | Lanterna             |
-| 13   | Luz de Freio         |
-| 12   | Luz de Ré            |
-| 33   | Seta Esquerda        |
-| 32   | Seta Direita         |
-| 5    | Buzina               |
+| GPIO | Função                                                   |
+| ---- | -------------------------------------------------------- |
+| 18   | Motor 1, entrada A da ponte H                            |
+| 19   | Motor 1, entrada B da ponte H                            |
+| 22   | Motor 2, entrada A da ponte H (lado direito no diferencial) |
+| 23   | Motor 2, entrada B da ponte H (lado direito no diferencial) |
+| 26   | Sinal PWM do servo de direção (Ackermann)                |
+| 25   | Farol PWM                                                |
+| 14   | Lanterna                                                 |
+| 13   | Luz de freio                                             |
+| 12   | Luz de ré                                                |
+| 33   | Seta esquerda                                            |
+| 32   | Seta direita                                             |
+| 5    | Buzina                                                   |
+
+No modo Ackermann, conecte o sinal do servo ao GPIO 26. Alimente o servo por uma fonte dimensionada para o modelo utilizado, não pelo pino 3,3 V do ESP32. Una o GND da fonte ao GND do ESP32 e confirme que o servo aceita sinal lógico de 3,3 V. Os pulsos são configurados inicialmente entre 1000 e 2000 us; ajuste esses limites conforme o servo e a mecânica da direção, evitando forçar o fim de curso.
 
 
 
